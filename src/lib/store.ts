@@ -193,46 +193,46 @@ export const Store = {
     }
   },
 
-  getRecords<T extends Record<string, unknown>>(type: RecordType): T[] {
+  getRecords<T>(type: RecordType): T[] {
     const data = this.load()
-    return (data[type] as T[]) || []
+    return (data[type] as unknown as T[]) || []
   },
 
   addRecord<T extends { id: string; date: string }>(type: RecordType, record: Omit<T, 'id'>): T {
     const data = this.load()
-    const newRecord = { ...record, id: generateId() } as T
-    const records = data[type] as T[]
+    const newRecord = { ...record, id: generateId() } as unknown as T
+    const records = data[type] as unknown as T[]
     records.push(newRecord)
     // 按日期排序
     records.sort((a, b) => a.date.localeCompare(b.date))
-    data[type] = records as unknown as AppData[typeof type]
+    data[type] = records as any
     this.save(data)
     return newRecord
   },
 
   updateRecord<T extends { id: string }>(type: RecordType, id: string, updates: Partial<T>): boolean {
     const data = this.load()
-    const records = data[type] as T[]
+    const records = data[type] as unknown as T[]
     const index = records.findIndex((r) => r.id === id)
     if (index === -1) return false
     records[index] = { ...records[index], ...updates }
-    data[type] = records as unknown as AppData[typeof type]
+    data[type] = records as any
     this.save(data)
     return true
   },
 
   deleteRecord(type: RecordType, id: string): boolean {
     const data = this.load()
-    const records = data[type] as Array<{ id: string }>
+    const records = data[type] as unknown as Array<{ id: string }>
     const filtered = records.filter((r) => r.id !== id)
     if (filtered.length === records.length) return false
-    data[type] = filtered as unknown as AppData[typeof type]
+    data[type] = filtered as any
     this.save(data)
     return true
   },
 
   getRecordsByDateRange<T extends { date: string }>(type: RecordType, startDate: string, endDate: string): T[] {
-    const records = this.getRecords<T>(type)
+    const records = this.getRecords(type) as unknown as T[]
     return records.filter((r) => r.date >= startDate && r.date <= endDate)
   },
 

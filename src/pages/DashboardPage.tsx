@@ -59,7 +59,7 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (ctx) => ctx.parsed.y > 0 ? `${ctx.parsed.y} kg` : '无数据',
+                label: (ctx) => ctx.parsed.y != null && ctx.parsed.y > 0 ? `${ctx.parsed.y} kg` : '无数据',
               },
             },
           },
@@ -196,12 +196,12 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
                 </div>
                 <div className={`text-lg font-bold ${card.textColor}`}>{card.value}</div>
                 {card.change && <div className="mt-1 text-xs">{card.change}</div>}
-                {card.label === '今日摄入' && profile.dailyCalorieTarget > 0 && (
+                {card.label === '今日摄入' && (profile.dailyCalorieTarget ?? 0) > 0 && (
                   <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${calorieProgress > 100 ? 'bg-exercise' : 'bg-diet'}`} style={{width: `${calorieProgress}%`}} />
                   </div>
                 )}
-                {card.label === '今日学习' && profile.dailyStudyTarget > 0 && (
+                {card.label === '今日学习' && (profile.dailyStudyTarget ?? 0) > 0 && (
                   <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div className="h-full rounded-full bg-study transition-all" style={{width: `${studyProgress}%`}} />
                   </div>
