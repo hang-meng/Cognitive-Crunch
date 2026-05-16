@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 225 25% 97%;
+    --foreground: 222 47% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 15%;
+
+    --primary: 222 47% 15%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 30% 95%;
+    --secondary-foreground: 222 47% 15%;
+
+    --muted: 210 30% 95%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 30% 95%;
+    --accent-foreground: 222 47% 15%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 25% 90%;
+    --input: 214 25% 90%;
+    --ring: 222 47% 15%;
+
+    --radius: 0.75rem;
+
+    /* Fitness / 体重 - 翠绿色系 */
+    --fitness: 160 84% 39%;
+    --fitness-foreground: 0 0% 100%;
+    --fitness-light: 160 84% 95%;
+
+    /* Diet / 饮食 - 琥珀色系 */
+    --diet: 38 92% 50%;
+    --diet-foreground: 0 0% 100%;
+    --diet-light: 48 96% 89%;
+
+    /* Exercise / 运动 - 玫红色系 */
+    --exercise: 0 72% 51%;
+    --exercise-foreground: 0 0% 100%;
+    --exercise-light: 0 72% 95%;
+
+    /* Study / 学习 - 靛蓝色系 */
+    --study: 239 84% 67%;
+    --study-foreground: 0 0% 100%;
+    --study-light: 239 84% 95%;
+
+    /* Gradients */
+    --gradient-fitness: linear-gradient(135deg, hsl(160, 84%, 39%), hsl(160, 60%, 55%));
+    --gradient-diet: linear-gradient(135deg, hsl(38, 92%, 50%), hsl(38, 80%, 60%));
+    --gradient-exercise: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(0, 65%, 65%));
+    --gradient-study: linear-gradient(135deg, hsl(239, 84%, 67%), hsl(239, 70%, 75%));
+    --gradient-card: linear-gradient(135deg, hsl(225, 25%, 97%), hsl(210, 30%, 95%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(222 47% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(222 47% 15% / 0.08), 0 2px 4px -1px hsl(222 47% 15% / 0.04);
+    --shadow-lg: 0 10px 25px -3px hsl(222 47% 15% / 0.1), 0 4px 10px -2px hsl(222 47% 15% / 0.05);
+    --shadow-glow-fitness: 0 0 30px hsl(160 84% 39% / 0.2);
+    --shadow-glow-study: 0 0 30px hsl(239 84% 67% / 0.2);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 212 27% 84%;
+
+    --fitness-light: 160 30% 15%;
+    --diet-light: 38 30% 15%;
+    --exercise-light: 0 30% 15%;
+    --study-light: 239 30% 15%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-gradient-fitness {
+    background: var(--gradient-fitness);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-study {
+    background: var(--gradient-study);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Chart.js tooltip custom style */
+.chartjs-tooltip {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-md) !important;
+  color: hsl(var(--card-foreground)) !important;
+  padding: 8px 12px !important;
+  font-family: inherit !important;
+}
+
+/* Safe area for mobile */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
