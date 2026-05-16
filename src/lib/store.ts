@@ -70,6 +70,23 @@ export interface UserProfile {
   targetWeight?: number
   dailyCalorieTarget?: number
   dailyStudyTarget?: number
+  dailyWaterTarget?: number
+}
+
+export interface WaterRecord {
+  id: string
+  date: string
+  amount: number
+  note: string
+}
+
+export interface SleepRecord {
+  id: string
+  date: string
+  bedTime: string
+  wakeTime: string
+  quality: number
+  note: string
 }
 
 export interface Milestone {
@@ -90,11 +107,13 @@ export interface AppData {
   exerciseRecords: ExerciseRecord[]
   studyRecords: StudyRecord[]
   examRecords: ExamRecord[]
+  waterRecords: WaterRecord[]
+  sleepRecords: SleepRecord[]
   milestones: Milestone[]
   darkMode: boolean
 }
 
-export type RecordType = 'weightRecords' | 'measurementRecords' | 'dietRecords' | 'exerciseRecords' | 'studyRecords' | 'examRecords'
+export type RecordType = 'weightRecords' | 'measurementRecords' | 'dietRecords' | 'exerciseRecords' | 'studyRecords' | 'examRecords' | 'waterRecords' | 'sleepRecords'
 
 // ============================================================
 // 工具函数
@@ -160,6 +179,7 @@ const DEFAULT_DATA: AppData = {
     gender: 'male',
     dailyCalorieTarget: 2000,
     dailyStudyTarget: 120,
+    dailyWaterTarget: 2000,
   },
   weightRecords: [],
   measurementRecords: [],
@@ -167,6 +187,8 @@ const DEFAULT_DATA: AppData = {
   exerciseRecords: [],
   studyRecords: [],
   examRecords: [],
+  waterRecords: [],
+  sleepRecords: [],
   milestones: [],
   darkMode: false,
 }
@@ -251,6 +273,45 @@ export const Store = {
     return records.reduce((sum, r) => sum + r.duration, 0)
   },
 
+  getDailyWater(date: string): number {
+    const records = this.getRecordsByDateRange<WaterRecord>('waterRecords', date, date)
+    return records.reduce((sum, r) => sum + r.amount, 0)
+  },
+
+  addWater(amount: number): WaterRecord {
+    return this.addRecord<WaterRecord>('waterRecords', {
+      date: todayStr(),
+      amount,
+      note: '',
+    } as Omit<WaterRecord, 'id'>)
+  },
+
+  getSleepDuration(bedTime: string, wakeTime: string): number {
+    const [bh, bm] = bedTime.split(':').map(Number)
+    let [wh, wm] = wakeTime.split(':').map(Number)
+    let bedMin = bh * 60 + bm
+    let wakeMin = wh * 60 + wm
+    if (wakeMin <= bedMin) wakeMin += 24 * 60
+    return +( (wakeMin - bedMin) / 60 ).toFixed(1)
+  },
+
+  getLastSleep(): { record: SleepRecord; duration: number } | null {
+    const data = this.load()
+    const records = data.sleepRecords
+    if (records.length === 0) return null
+    const last = records[records.length - 1]
+    return { record: last, duration: this.getSleepDuration(last.bedTime, last.wakeTime) }
+  },
+
+  getWeeklySleepAvg(): number | null {
+    const data = this.load()
+    const last7 = getDateRange(7)[0]
+    const weekRecords = data.sleepRecords.filter((r) => r.date >= last7)
+    if (weekRecords.length === 0) return null
+    const total = weekRecords.reduce((s, r) => s + this.getSleepDuration(r.bedTime, r.wakeTime), 0)
+    return +(total / weekRecords.length).toFixed(1)
+  },
+
   getWeightTrend(days: number): { date: string; weight: number }[] {
     const records = this.getRecords<WeightRecord>('weightRecords')
     const start = getDateRange(days)[0]
@@ -320,12 +381,18 @@ export const Store = {
     const examRecords = data.examRecords
     const latestExam = examRecords.length > 0 ? examRecords[examRecords.length - 1] : null
 
+    // 今日饮水（内联，避免重复 load）
+    const todayWater = data.waterRecords
+      .filter((r) => r.date === today)
+      .reduce((sum, r) => sum + r.amount, 0)
+
     return {
       latestWeight,
       weightChange,
       todayCalories,
       todayBurned,
       todayStudy,
+      todayWater,
       weekStudy,
       latestExam,
       totalRecords: weightRecords.length + data.dietRecords.length + data.exerciseRecords.length + data.studyRecords.length,
@@ -359,6 +426,7 @@ export const Store = {
     addDates(data.exerciseRecords)
     addDates(data.studyRecords)
     addDates(data.measurementRecords)
+    addDates(data.waterRecords)
 
     let streak = 0
     const today = new Date(todayStr() + 'T00:00:00')

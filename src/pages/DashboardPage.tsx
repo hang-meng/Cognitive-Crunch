@@ -1,10 +1,10 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { Store, CHART_COLORS, todayStr, formatDate, getDateRange } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Chart from 'chart.js/auto'
 import {
   Scale, Utensils, Dumbbell, BookOpen,
-  TrendingDown, TrendingUp, Minus, Flame, Clock, Target,
+  TrendingDown, TrendingUp, Minus, Flame, Clock, Target, Droplets, Plus, Moon, Star,
 } from 'lucide-react'
 
 interface DashboardPageProps {
@@ -23,6 +23,41 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
   const data = useMemo(() => Store.load(), []); const profile = data.userProfile
   const calorieProgress = profile.dailyCalorieTarget ? Math.min(100, Math.round((stats.todayCalories / profile.dailyCalorieTarget) * 100)) : 0
   const studyProgress = profile.dailyStudyTarget ? Math.min(100, Math.round((stats.todayStudy / profile.dailyStudyTarget) * 100)) : 0
+
+  // 饮水追踪本地状态（即时反馈）
+  const waterTarget = profile.dailyWaterTarget ?? 2000
+  const [waterAmount, setWaterAmount] = useState(stats.todayWater)
+  const waterProgress = Math.min(100, Math.round((waterAmount / waterTarget) * 100))
+
+  const handleAddWater = (amount: number) => {
+    Store.addWater(amount)
+    const updated = waterAmount + amount
+    setWaterAmount(updated)
+    showToast(`+${amount}ml 饮水已记录`)
+  }
+
+  // 睡眠状态
+  const lastSleep = useMemo(() => Store.getLastSleep(), [])
+  const weekSleepAvg = useMemo(() => Store.getWeeklySleepAvg(), [])
+  const [showSleepForm, setShowSleepForm] = useState(false)
+  const [sleepBedTime, setSleepBedTime] = useState('23:00')
+  const [sleepWakeTime, setSleepWakeTime] = useState('07:00')
+  const [sleepQuality, setSleepQuality] = useState(3)
+  const [localSleep, setLocalSleep] = useState(lastSleep)
+
+  const handleSaveSleep = () => {
+    const record = Store.addRecord<import('@/lib/store').SleepRecord>('sleepRecords', {
+      date: todayStr(),
+      bedTime: sleepBedTime,
+      wakeTime: sleepWakeTime,
+      quality: sleepQuality,
+      note: '',
+    } as Omit<import('@/lib/store').SleepRecord, 'id'>)
+    const duration = Store.getSleepDuration(sleepBedTime, sleepWakeTime)
+    setLocalSleep({ record, duration })
+    setShowSleepForm(false)
+    showToast(`睡眠 ${duration}h 已记录`)
+  }
 
   useEffect(() => {
     // Weight mini chart
@@ -211,6 +246,138 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
           )
         })}
       </div>
+
+      {/* 饮水追踪 */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-water-light flex items-center justify-center">
+                <Droplets className="w-4 h-4 text-water" />
+              </div>
+              <div>
+                <span className="text-sm font-medium">今日饮水</span>
+                <span className="text-xs text-muted-foreground ml-1">{waterAmount} / {waterTarget} ml</span>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-water">{waterProgress}%</span>
+          </div>
+          {/* 进度条 */}
+          <div className="h-2 bg-muted rounded-full overflow-hidden mb-3">
+            <div
+              className="h-full rounded-full bg-water transition-all duration-300"
+              style={{ width: `${waterProgress}%` }}
+            />
+          </div>
+          {/* 快捷按钮 */}
+          <div className="flex gap-2">
+            {[200, 300, 500].map((ml) => (
+              <button
+                key={ml}
+                onClick={() => handleAddWater(ml)}
+                className="flex-1 py-2 rounded-lg bg-water-light hover:bg-water/20 text-water text-sm font-medium transition-colors flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />{ml}ml
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 睡眠记录 */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-sleep-light flex items-center justify-center">
+                <Moon className="w-4 h-4 text-sleep" />
+              </div>
+              <span className="text-sm font-medium">睡眠记录</span>
+            </div>
+            {!showSleepForm && (
+              <button
+                onClick={() => setShowSleepForm(true)}
+                className="text-xs px-2.5 py-1 rounded-lg bg-sleep-light text-sleep hover:bg-sleep/20 transition-colors"
+              >
+                <Plus className="w-3 h-3 inline mr-0.5" />记录
+              </button>
+            )}
+          </div>
+
+          {showSleepForm ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">入睡时间</label>
+                  <input
+                    type="time" value={sleepBedTime}
+                    onChange={(e) => setSleepBedTime(e.target.value)}
+                    className="w-full mt-1 px-2 py-1.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-sleep/20"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">起床时间</label>
+                  <input
+                    type="time" value={sleepWakeTime}
+                    onChange={(e) => setSleepWakeTime(e.target.value)}
+                    className="w-full mt-1 px-2 py-1.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-sleep/20"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">睡眠质量</label>
+                <div className="flex gap-1.5 mt-1">
+                  {[1, 2, 3, 4, 5].map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setSleepQuality(q)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${
+                        sleepQuality >= q ? 'bg-sleep text-white' : 'bg-muted hover:bg-accent'
+                      }`}
+                    >
+                      {q === 1 ? '😫' : q === 2 ? '😕' : q === 3 ? '😐' : q === 4 ? '😊' : '😄'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSleepForm(false)}
+                  className="flex-1 py-2 rounded-lg bg-muted hover:bg-accent text-sm transition-colors"
+                >取消</button>
+                <button
+                  onClick={handleSaveSleep}
+                  className="flex-1 py-2 rounded-lg bg-sleep text-white text-sm hover:bg-sleep/90 transition-colors"
+                >保存</button>
+              </div>
+            </div>
+          ) : localSleep ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {localSleep.record.bedTime} → {localSleep.record.wakeTime}
+                </span>
+                <span className="text-xs">{['', '😫','😕','😐','😊','😄'][localSleep.record.quality]}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div>
+                  <span className="text-2xl font-bold text-sleep">{localSleep.duration}</span>
+                  <span className="text-xs text-muted-foreground ml-1">小时</span>
+                </div>
+                {weekSleepAvg !== null && (
+                  <div className="text-xs text-muted-foreground">
+                    本周平均 <span className="font-medium text-sleep">{weekSleepAvg}h</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-3 text-xs text-muted-foreground">
+              还没记录睡眠，点击上方按钮开始
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* 本周学习时长 */}
       {stats.weekStudy > 0 && (

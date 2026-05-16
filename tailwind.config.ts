@@ -71,6 +71,16 @@ const config: Config = {
           foreground: "hsl(var(--study-foreground))",
           light: "hsl(var(--study-light))",
         },
+        water: {
+          DEFAULT: "hsl(var(--water))",
+          foreground: "hsl(var(--water-foreground))",
+          light: "hsl(var(--water-light))",
+        },
+        sleep: {
+          DEFAULT: "hsl(var(--sleep))",
+          foreground: "hsl(var(--sleep-foreground))",
+          light: "hsl(var(--sleep-light))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

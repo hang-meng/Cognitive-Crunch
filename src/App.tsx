@@ -109,13 +109,15 @@ function App() {
   const handleDeleteAll = useCallback(() => {
     const empty: AppData = {
       version: 2,
-      userProfile: { name: '', height: 170, gender: 'male', dailyCalorieTarget: 2000, dailyStudyTarget: 120 },
+      userProfile: { name: '', height: 170, gender: 'male', dailyCalorieTarget: 2000, dailyStudyTarget: 120, dailyWaterTarget: 2000 },
       weightRecords: [],
       measurementRecords: [],
       dietRecords: [],
       exerciseRecords: [],
       studyRecords: [],
       examRecords: [],
+      waterRecords: [],
+      sleepRecords: [],
       milestones: [],
       darkMode: false,
     }

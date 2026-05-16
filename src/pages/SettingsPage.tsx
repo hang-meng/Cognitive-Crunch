@@ -18,12 +18,14 @@ export const SettingsPage = memo(function SettingsPage({ showToast, onClose }: S
   const [targetWeight, setTargetWeight] = useState(profile.targetWeight?.toString() || '')
   const [dailyCalorieTarget, setDailyCalorieTarget] = useState(profile.dailyCalorieTarget?.toString() || '2000')
   const [dailyStudyTarget, setDailyStudyTarget] = useState(profile.dailyStudyTarget?.toString() || '120')
+  const [dailyWaterTarget, setDailyWaterTarget] = useState(profile.dailyWaterTarget?.toString() || '2000')
 
   const handleSave = () => {
     const h = parseInt(height)
     const tw = parseFloat(targetWeight)
     const cal = parseInt(dailyCalorieTarget)
     const study = parseInt(dailyStudyTarget)
+    const water = parseInt(dailyWaterTarget)
 
     if (isNaN(h) || h < 100 || h > 250) {
       showToast('请输入有效身高(100-250cm)', 'error')
@@ -37,6 +39,7 @@ export const SettingsPage = memo(function SettingsPage({ showToast, onClose }: S
       targetWeight: isNaN(tw) ? undefined : tw,
       dailyCalorieTarget: isNaN(cal) ? 2000 : cal,
       dailyStudyTarget: isNaN(study) ? 120 : study,
+      dailyWaterTarget: isNaN(water) ? 2000 : water,
     })
     showToast('设置已保存')
     onClose()
@@ -124,6 +127,12 @@ export const SettingsPage = memo(function SettingsPage({ showToast, onClose }: S
             <input type="number" value={dailyStudyTarget} onChange={(e) => setDailyStudyTarget(e.target.value)}
               placeholder="120"
               className="w-full mt-1.5 px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-study/20" />
+          </div>
+          <div>
+            <label className="text-sm font-medium">每日饮水目标 (ml)</label>
+            <input type="number" value={dailyWaterTarget} onChange={(e) => setDailyWaterTarget(e.target.value)}
+              placeholder="2000"
+              className="w-full mt-1.5 px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-water/20" />
           </div>
         </CardContent>
       </Card>
