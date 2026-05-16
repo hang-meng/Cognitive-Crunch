@@ -3,7 +3,7 @@ import { Store, formatDate } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Chart from 'chart.js/auto'
-import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Minus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Minus, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface ReportPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -22,6 +22,12 @@ export const ReportPage = memo(function ReportPage({ showToast }: ReportPageProp
   const report = viewMode === 'week'
     ? Store.getWeeklyReport()
     : Store.getMonthlyReport(monthOffset)
+
+  // 本周 vs 上周对比（仅周报模式显示）
+  const comparison = useMemo(() => {
+    if (viewMode !== 'week' || weekOffset !== 0) return null
+    return Store.getWeekComparison()
+  }, [viewMode, weekOffset])
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -168,6 +174,48 @@ export const ReportPage = memo(function ReportPage({ showToast }: ReportPageProp
           </CardContent>
         </Card>
       </div>
+
+      {/* 本周 vs 上周对比 */}
+      {comparison && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">本周 vs 上周</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { label: '摄入热量', unit: 'kcal', curr: comparison.thisCaloriesIn, prev: comparison.lastCaloriesIn, pct: comparison.calInPct, color: 'text-diet', downGood: true },
+              { label: '运动消耗', unit: 'kcal', curr: comparison.thisCaloriesOut, prev: comparison.lastCaloriesOut, pct: comparison.calOutPct, color: 'text-exercise', downGood: false },
+              { label: '学习时长', unit: 'min', curr: comparison.thisStudyMin, prev: comparison.lastStudyMin, pct: comparison.studyPct, color: 'text-study', downGood: false },
+            ].map((item) => {
+              const isUp = item.pct !== null && item.pct > 0
+              const isDown = item.pct !== null && item.pct < 0
+              const isGood = item.downGood ? isDown : isUp
+              const isBad = item.downGood ? isUp : isDown
+              return (
+                <div key={item.label} className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground w-16">{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className={`text-sm font-bold ${item.color}`}>{item.curr.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        上周 {item.prev.toLocaleString()} {item.unit}
+                      </div>
+                    </div>
+                    {item.pct !== null && (
+                      <div className={`flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded ${
+                        isGood ? 'text-fitness bg-fitness/10' : isBad ? 'text-exercise bg-exercise/10' : 'text-muted-foreground bg-muted'
+                      }`}>
+                        {isUp ? <ArrowUp className="w-3 h-3" /> : isDown ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                        {Math.abs(item.pct)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Weight change */}
       {report.weightStart && report.weightEnd && (

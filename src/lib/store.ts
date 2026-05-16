@@ -570,6 +570,71 @@ export const Store = {
     }
   },
 
+  // 本周 vs 上周对比
+  getWeekComparison() {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+
+    // 本周一 ~ 今天
+    const dayOfWeek = now.getDay()
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+    const thisMonday = new Date(now)
+    thisMonday.setDate(now.getDate() + mondayOffset)
+    const thisStart = thisMonday.toISOString().split('T')[0]
+    const thisEnd = now.toISOString().split('T')[0]
+
+    // 上周一 ~ 上周日
+    const lastMonday = new Date(thisMonday)
+    lastMonday.setDate(thisMonday.getDate() - 7)
+    const lastSunday = new Date(thisMonday)
+    lastSunday.setDate(thisMonday.getDate() - 1)
+    const lastStart = lastMonday.toISOString().split('T')[0]
+    const lastEnd = lastSunday.toISOString().split('T')[0]
+
+    const data = this.load()
+
+    const filter = <T extends { date: string }>(records: T[], s: string, e: string) =>
+      records.filter((r) => r.date >= s && r.date <= e)
+    const sumCal = (records: { calories: number }[]) => records.reduce((s, r) => s + r.calories, 0)
+    const sumDur = (records: { duration: number }[]) => records.reduce((s, r) => s + r.duration, 0)
+
+    const thisDiets = filter(data.dietRecords, thisStart, thisEnd)
+    const lastDiets = filter(data.dietRecords, lastStart, lastEnd)
+    const thisExercises = filter(data.exerciseRecords, thisStart, thisEnd)
+    const lastExercises = filter(data.exerciseRecords, lastStart, lastEnd)
+    const thisStudies = filter(data.studyRecords, thisStart, thisEnd)
+    const lastStudies = filter(data.studyRecords, lastStart, lastEnd)
+
+    const thisCalsIn = sumCal(thisDiets)
+    const lastCalsIn = sumCal(lastDiets)
+    const thisCalsOut = sumCal(thisExercises)
+    const lastCalsOut = sumCal(lastExercises)
+    const thisStudy = sumDur(thisStudies)
+    const lastStudy = sumDur(lastStudies)
+
+    const pctChange = (curr: number, prev: number): number | null => {
+      if (prev === 0 && curr === 0) return null
+      if (prev === 0) return 100
+      return +(((curr - prev) / prev) * 100).toFixed(1)
+    }
+
+    return {
+      thisStart,
+      thisEnd,
+      lastStart,
+      lastEnd,
+      thisCaloriesIn: thisCalsIn,
+      lastCaloriesIn: lastCalsIn,
+      calInPct: pctChange(thisCalsIn, lastCalsIn),
+      thisCaloriesOut: thisCalsOut,
+      lastCaloriesOut: lastCalsOut,
+      calOutPct: pctChange(thisCalsOut, lastCalsOut),
+      thisStudyMin: thisStudy,
+      lastStudyMin: lastStudy,
+      studyPct: pctChange(thisStudy, lastStudy),
+    }
+  },
+
   // 月报
   getMonthlyReport(monthOffset = 0) {
     const now = new Date()
