@@ -1,21 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { Store, formatDate } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Chart from 'chart.js/auto'
-import { useRef } from 'react'
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Minus } from 'lucide-react'
 
 interface ReportPageProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
-export function ReportPage({ showToast }: ReportPageProps) {
+export const ReportPage = memo(function ReportPage({ showToast }: ReportPageProps) {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
   const [weekOffset, setWeekOffset] = useState(0)
   const [monthOffset, setMonthOffset] = useState(0)
   const chartRef = useRef<HTMLCanvasElement>(null)
   const chartInst = useRef<Chart | null>(null)
+
+  // 缓存 localStorage 数据，避免每次渲染都读取
+  const cachedData = useMemo(() => Store.load(), [])
 
   const report = viewMode === 'week'
     ? Store.getWeeklyReport()
@@ -25,7 +27,7 @@ export function ReportPage({ showToast }: ReportPageProps) {
     if (!chartRef.current) return
     if (chartInst.current) chartInst.current.destroy()
 
-    const data = Store.load()
+    const data = cachedData
     const days = viewMode === 'week' ? 7 : 30
     const dates: string[] = []
     for (let i = days - 1; i >= 0; i--) {
@@ -246,4 +248,4 @@ export function ReportPage({ showToast }: ReportPageProps) {
       </Card>
     </div>
   )
-}
+})

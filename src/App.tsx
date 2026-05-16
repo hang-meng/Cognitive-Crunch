@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { Store, AppData, todayStr } from '@/lib/store'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { WeightPage } from '@/pages/WeightPage'
@@ -74,6 +74,15 @@ function App() {
       document.documentElement.classList.remove('dark')
     }
   }, [darkMode])
+
+  const handleCloseSettings = useCallback(() => {
+    setShowSettings(false)
+    refreshData()
+  }, [refreshData])
+
+  const handleCloseReport = useCallback(() => {
+    setShowReport(false)
+  }, [])
 
   const handleImport = useCallback((jsonStr: string): boolean => {
     if (Store.importAll(jsonStr)) {
@@ -242,11 +251,11 @@ function App() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 animate-fade-in">
           <div className="w-full md:max-w-md bg-card border md:rounded-2xl rounded-t-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-auto p-5">
             <SettingsPage
               showToast={showToast}
-              onClose={() => { setShowSettings(false); refreshData() }}
+              onClose={handleCloseSettings}
             />
           </div>
         </div>
@@ -254,11 +263,11 @@ function App() {
 
       {/* Report Modal */}
       {showReport && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 animate-fade-in">
           <div className="w-full md:max-w-lg bg-card border md:rounded-2xl rounded-t-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-auto">
             <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-card z-10">
               <h2 className="text-lg font-semibold">统计报告</h2>
-              <button onClick={() => setShowReport(false)} className="p-1 rounded-lg hover:bg-accent">
+              <button onClick={handleCloseReport} className="p-1 rounded-lg hover:bg-accent">
                 <Settings className="w-5 h-5" />
               </button>
             </div>

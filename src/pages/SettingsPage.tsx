@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, memo } from 'react'
 import { Store, UserProfile, getBMICategory } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,8 @@ interface SettingsPageProps {
   onClose: () => void
 }
 
-export function SettingsPage({ showToast, onClose }: SettingsPageProps) {
-  const data = Store.load()
+export const SettingsPage = memo(function SettingsPage({ showToast, onClose }: SettingsPageProps) {
+  const data = useMemo(() => Store.load(), [])
   const profile = data.userProfile
   const [name, setName] = useState(profile.name)
   const [height, setHeight] = useState(profile.height.toString())
@@ -133,4 +133,4 @@ export function SettingsPage({ showToast, onClose }: SettingsPageProps) {
       </Button>
     </div>
   )
-}
+})

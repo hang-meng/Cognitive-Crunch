@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { Store, CHART_COLORS, todayStr, formatDate, getDateRange } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Chart from 'chart.js/auto'
@@ -17,10 +17,10 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
   const studyChartRef = useRef<HTMLCanvasElement>(null)
   const studyChartInst = useRef<Chart | null>(null)
 
-  const stats = Store.getStats()
+  const stats = useMemo(() => Store.getStats(), [])
   const today = todayStr()
-  const streak = Store.getStreak()
-  const data = Store.load(); const profile = data.userProfile
+  const streak = useMemo(() => Store.getStreak(), [])
+  const data = useMemo(() => Store.load(), []); const profile = data.userProfile
   const calorieProgress = profile.dailyCalorieTarget ? Math.min(100, Math.round((stats.todayCalories / profile.dailyCalorieTarget) * 100)) : 0
   const studyProgress = profile.dailyStudyTarget ? Math.min(100, Math.round((stats.todayStudy / profile.dailyStudyTarget) * 100)) : 0
 

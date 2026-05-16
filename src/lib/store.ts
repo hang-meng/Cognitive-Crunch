@@ -296,14 +296,20 @@ export const Store = {
       : null
     const weightChange = latestWeight && firstWeekWeight ? +(latestWeight - firstWeekWeight).toFixed(1) : null
 
-    // 今日摄入
-    const todayCalories = this.getDailyCalories(today)
+    // 今日摄入（内联，避免 getDailyCalories 重复 load）
+    const todayCalories = data.dietRecords
+      .filter((r) => r.date === today)
+      .reduce((sum, r) => sum + r.calories, 0)
 
-    // 今日运动消耗
-    const todayBurned = this.getDailyExerciseCalories(today)
+    // 今日运动消耗（内联，避免 getDailyExerciseCalories 重复 load）
+    const todayBurned = data.exerciseRecords
+      .filter((r) => r.date === today)
+      .reduce((sum, r) => sum + r.calories, 0)
 
-    // 今日学习
-    const todayStudy = this.getDailyStudyMinutes(today)
+    // 今日学习（内联，避免 getDailyStudyMinutes 重复 load）
+    const todayStudy = data.studyRecords
+      .filter((r) => r.date === today)
+      .reduce((sum, r) => sum + r.duration, 0)
 
     // 本周学习时长
     const weekStudy = data.studyRecords
