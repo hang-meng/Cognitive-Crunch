@@ -12,7 +12,7 @@ import { DataManager } from '@/components/DataManager'
 import { MilestoneNotification } from '@/components/MilestoneNotification'
 import {
   LayoutDashboard, Scale, Utensils, Dumbbell, BookOpen,
-  Download, Sun, Moon, Settings, BarChart3, Flame,
+  Download, Sun, Moon, Settings, BarChart3, Flame, X,
 } from 'lucide-react'
 
 const TABS = [
@@ -270,7 +270,7 @@ function App() {
             <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-card z-10">
               <h2 className="text-lg font-semibold">统计报告</h2>
               <button onClick={handleCloseReport} className="p-1 rounded-lg hover:bg-accent">
-                <Settings className="w-5 h-5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-5">

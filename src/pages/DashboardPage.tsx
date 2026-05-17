@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Chart from 'chart.js/auto'
 import {
   Scale, Utensils, Dumbbell, BookOpen,
-  TrendingDown, TrendingUp, Minus, Flame, Clock, Target, Droplets, Plus, Moon, Star,
+  TrendingDown, TrendingUp, Minus, Flame, Clock, Droplets, Plus, Moon, Star,
 } from 'lucide-react'
 
 interface DashboardPageProps {
@@ -199,22 +199,20 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
 
   return (
     <div className="space-y-5">
-      {/* Streak + Goals */}
-      <div className="grid grid-cols-1 gap-3 mb-2">
-        {streak > 0 && (
-          <Card className="bg-gradient-to-r from-diet-light to-exercise-light">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-diet/20 flex items-center justify-center">
-                <Flame className="w-6 h-6 text-diet" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{streak} <span className="text-base font-normal text-muted-foreground">天</span></div>
-                <div className="text-xs text-muted-foreground">连续记录打卡</div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Streak */}
+      {streak > 0 && (
+        <Card className="bg-gradient-to-r from-diet-light to-exercise-light">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-diet/20 flex items-center justify-center">
+              <Flame className="w-6 h-6 text-diet" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{streak} <span className="text-base font-normal text-muted-foreground">天</span></div>
+              <div className="text-xs text-muted-foreground">连续记录打卡</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3">
@@ -379,18 +377,6 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
         </CardContent>
       </Card>
 
-      {/* 本周学习时长 */}
-      {stats.weekStudy > 0 && (
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="w-4 h-4 text-study" />
-              本周学习总计：{Math.floor(stats.weekStudy / 60)}h {stats.weekStudy % 60}m
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      )}
-
       {/* 体重迷你图 */}
       <Card>
         <CardHeader className="pb-2">
@@ -400,9 +386,17 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-40">
-            <canvas ref={weightChartRef} />
-          </div>
+          {stats.latestWeight === null ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Scale className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">暂无体重数据</p>
+              <p className="text-xs mt-1">去体重页面添加记录吧</p>
+            </div>
+          ) : (
+            <div className="h-40">
+              <canvas ref={weightChartRef} />
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -412,12 +406,15 @@ export function DashboardPage({ showToast }: DashboardPageProps) {
           <CardTitle className="text-sm flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-study" />
             本周每日学习时长
+            {stats.weekStudy > 0 && (
+              <span className="text-xs font-normal text-muted-foreground ml-auto">
+                共 {Math.floor(stats.weekStudy / 60)}h {stats.weekStudy % 60}m
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-40">
-            <canvas ref={studyChartRef} />
-          </div>
+          <div className="h-40"><canvas ref={studyChartRef} /></div>
         </CardContent>
       </Card>
 
