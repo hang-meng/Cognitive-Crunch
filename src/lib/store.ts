@@ -2,6 +2,8 @@
 // 类型定义
 // ============================================================
 
+import { compressToUTF16, decompressFromUTF16 } from 'lz-string'
+
 export interface WeightRecord {
   id: string
   date: string
@@ -89,6 +91,17 @@ export interface SleepRecord {
   note: string
 }
 
+export interface WeekSummary {
+  weekStart: string
+  endWeight: number | null
+  totalCaloriesIn: number
+  totalCaloriesOut: number
+  totalStudyMin: number
+  totalWater: number
+  avgSleepHours: number | null
+  recordDays: number
+}
+
 export interface Milestone {
   id: string
   type: 'weight-low' | 'streak' | 'study-hours' | 'exam-score' | 'record-count'
@@ -109,6 +122,7 @@ export interface AppData {
   examRecords: ExamRecord[]
   waterRecords: WaterRecord[]
   sleepRecords: SleepRecord[]
+  aggregatedData: WeekSummary[]
   milestones: Milestone[]
   darkMode: boolean
 }
@@ -161,6 +175,13 @@ export function getWeekStart(dateStr: string): string {
   return d.toISOString().split('T')[0]
 }
 
+function getISOWeekKey(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  const day = d.getDay() || 7
+  d.setDate(d.getDate() - day + 1)
+  return d.toISOString().split('T')[0]
+}
+
 export function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val))
 }
@@ -189,6 +210,7 @@ const DEFAULT_DATA: AppData = {
   examRecords: [],
   waterRecords: [],
   sleepRecords: [],
+  aggregatedData: [],
   milestones: [],
   darkMode: false,
 }
@@ -198,8 +220,12 @@ export const Store = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return structuredClone(DEFAULT_DATA)
-      const data = JSON.parse(raw) as AppData
+      // 兼容旧格式：尝试解压，失败则当作明文 JSON
+      let json = decompressFromUTF16(raw)
+      if (!json) json = raw
+      const data = JSON.parse(json) as AppData
       if (!data.version) return structuredClone(DEFAULT_DATA)
+      if (!data.aggregatedData) data.aggregatedData = []
       return data
     } catch {
       return structuredClone(DEFAULT_DATA)
@@ -208,11 +234,95 @@ export const Store = {
 
   save(data: AppData): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      data = this.aggregateOldData(data)
+      const json = JSON.stringify(data)
+      const compressed = compressToUTF16(json)
+      localStorage.setItem(STORAGE_KEY, compressed)
     } catch (e) {
       console.error('localStorage 存储失败，可能容量已满', e)
       alert('数据存储失败！浏览器存储空间可能已满，请导出数据后清理。')
     }
+  },
+
+  aggregateOldData(data: AppData): AppData {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 90)
+    const cutoffStr = cutoff.toISOString().split('T')[0]
+
+    const hasOld =
+      data.weightRecords.some((r) => r.date < cutoffStr) ||
+      data.dietRecords.some((r) => r.date < cutoffStr) ||
+      data.exerciseRecords.some((r) => r.date < cutoffStr) ||
+      data.studyRecords.some((r) => r.date < cutoffStr) ||
+      data.waterRecords.some((r) => r.date < cutoffStr) ||
+      data.sleepRecords.some((r) => r.date < cutoffStr)
+
+    if (!hasOld) return data
+
+    const oldDates = new Set<string>()
+    const addDate = (r: { date: string }) => { if (r.date < cutoffStr) oldDates.add(r.date) }
+    data.weightRecords.forEach(addDate)
+    data.dietRecords.forEach(addDate)
+    data.exerciseRecords.forEach(addDate)
+    data.studyRecords.forEach(addDate)
+    data.waterRecords.forEach(addDate)
+    data.sleepRecords.forEach(addDate)
+
+    const existingWeeks = new Set(data.aggregatedData.map((w) => w.weekStart))
+
+    const weekMap = new Map<string, string[]>()
+    oldDates.forEach((d) => {
+      const key = getISOWeekKey(d)
+      if (!weekMap.has(key)) weekMap.set(key, [])
+      weekMap.get(key)!.push(d)
+    })
+
+    weekMap.forEach((dates, weekStart) => {
+      if (existingWeeks.has(weekStart)) return
+
+      const weekWeights = data.weightRecords.filter((r) => r.date >= weekStart && r.date < cutoffStr)
+      const endWeight = weekWeights.length > 0 ? weekWeights[weekWeights.length - 1].weight : null
+
+      const weekDiets = dates.flatMap((d) => data.dietRecords.filter((r) => r.date === d))
+      const totalCaloriesIn = weekDiets.reduce((s, r) => s + r.calories, 0)
+
+      const weekExercises = dates.flatMap((d) => data.exerciseRecords.filter((r) => r.date === d))
+      const totalCaloriesOut = weekExercises.reduce((s, r) => s + r.calories, 0)
+
+      const weekStudies = dates.flatMap((d) => data.studyRecords.filter((r) => r.date === d))
+      const totalStudyMin = weekStudies.reduce((s, r) => s + r.duration, 0)
+
+      const weekWater = dates.flatMap((d) => data.waterRecords.filter((r) => r.date === d))
+      const totalWater = weekWater.reduce((s, r) => s + r.amount, 0)
+
+      const weekSleep = dates.flatMap((d) => data.sleepRecords.filter((r) => r.date === d))
+      const avgSleepHours = weekSleep.length > 0
+        ? +(weekSleep.reduce((s, r) => s + this.getSleepDuration(r.bedTime, r.wakeTime), 0) / weekSleep.length).toFixed(1)
+        : null
+
+      data.aggregatedData.push({
+        weekStart,
+        endWeight,
+        totalCaloriesIn,
+        totalCaloriesOut,
+        totalStudyMin,
+        totalWater,
+        avgSleepHours,
+        recordDays: dates.length,
+      })
+    })
+
+    data.aggregatedData.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+
+    const keep = <T extends { date: string }>(r: T) => r.date >= cutoffStr
+    data.weightRecords = data.weightRecords.filter(keep)
+    data.dietRecords = data.dietRecords.filter(keep)
+    data.exerciseRecords = data.exerciseRecords.filter(keep)
+    data.studyRecords = data.studyRecords.filter(keep)
+    data.waterRecords = data.waterRecords.filter(keep)
+    data.sleepRecords = data.sleepRecords.filter(keep)
+
+    return data
   },
 
   getRecords<T>(type: RecordType): T[] {

@@ -118,6 +118,7 @@ function App() {
       examRecords: [],
       waterRecords: [],
       sleepRecords: [],
+      aggregatedData: [],
       milestones: [],
       darkMode: false,
     }
